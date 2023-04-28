@@ -4,7 +4,7 @@ INCLUDE_DIRECTORIES(${GTEST_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/include/)
 
 ADD_EXECUTABLE(
-    test
+    bridge_test
     test.c
 )
 
@@ -13,9 +13,9 @@ SET(OPENCV_DYNAMIC_LIBS "${CMAKE_CURRENT_SOURCE_DIR}/")
 SET(CMAKE_C_FLAGS " -std=gnu99 -g -O0 ") 
 
 TARGET_LINK_LIBRARIES(
-    test
+    bridge_test
     pthread
     ${GTEST_BOTH_LIBRARIES}
 )
 
-GTEST_DISCOVER_TESTS(test)
+GTEST_DISCOVER_TESTS(bridge_test)
