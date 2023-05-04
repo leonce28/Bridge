@@ -1,21 +1,29 @@
-FIND_PACKAGE(GTest REQUIRED)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 
-INCLUDE_DIRECTORIES(${GTEST_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/include/)
 
+SET(CMAKE_C_FLAGS "-std=gnu11 -g -O0 -Werror")
+
+# bridge list
 ADD_EXECUTABLE(
-    bridge_test
-    test.c
+    bridge_test_list
+    list_test.c
 )
-
-SET(OPENCV_DYNAMIC_LIBS "${CMAKE_CURRENT_SOURCE_DIR}/")
-
-SET(CMAKE_C_FLAGS " -std=gnu99 -g -O0 ") 
 
 TARGET_LINK_LIBRARIES(
-    bridge_test
+    bridge_test_list
+    bridge
     pthread
-    ${GTEST_BOTH_LIBRARIES}
 )
 
-GTEST_DISCOVER_TESTS(bridge_test)
+# bridge vector
+ADD_EXECUTABLE(
+    bridge_test_vector
+    vector_test.c
+)
+
+TARGET_LINK_LIBRARIES(
+    bridge_test_vector
+    bridge
+    pthread
+)

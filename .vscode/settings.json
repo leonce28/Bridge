@@ -1,6 +1,18 @@
 {
     "files.associations": {
         "list.h": "c",
-        "gtest.h": "c"
-    }
+        "gtest.h": "c",
+        "__node_handle": "c",
+        "cstdlib": "c",
+        "locale": "c",
+        "ostream": "c",
+        "new": "c",
+        "memory": "c",
+        "node.h": "c",
+        "assert.h": "c",
+        "any": "c",
+        "random": "c",
+        "deque": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

@@ -1,20 +1,30 @@
 #pragma once
+#include "node.h"
 
-typedef struct ListNode ListNode;
-typedef struct LinkedList LinkedList;
-typedef void(*LinkedListPrint)(void *);
+typedef struct BridgeList BridgeList;
+typedef void(*BridgeListPrint)(void *);
 
-extern LinkedList *linked_list_create();
-extern void linked_list_destroy(LinkedList *list);
+extern BridgeList *blist_create();
+extern void blist_destroy(BridgeList *list);
 
-extern int linked_list_push_front(LinkedList *list, void *data);
-extern int linked_list_push_back(LinkedList *list, void *data);
-extern int linked_list_pop_front(LinkedList *list);
-extern int linked_list_pop_back(LinkedList *list);
+extern void blist_push_front_ival(BridgeList *list, long long ival);
+extern void blist_push_front_dval(BridgeList *list, long double dval);
+extern void blist_push_front_sval(BridgeList *list, const char *sval);
+extern void blist_push_front_pval(BridgeList *list, void *pval);
 
-extern ListNode *linked_list_node_front(const LinkedList *list);
-extern ListNode *linked_list_node_back(const LinkedList *list);
-extern ListNode *linked_list_node_next(const ListNode *node);
+extern void blist_push_back_ival(BridgeList *list, long long ival);
+extern void blist_push_back_dval(BridgeList *list, long double dval);
+extern void blist_push_back_sval(BridgeList *list, const char *sval);
+extern void blist_push_back_pval(BridgeList *list, void *pval);
 
-extern void *linked_list_node_data(const ListNode *node);
-extern void linked_list_print(const LinkedList *list, LinkedListPrint print);
+extern void blist_pop_front(BridgeList *list);
+extern void blist_pop_back(BridgeList *list);
+
+extern void blist_print_normal(const BridgeList *list);
+extern void blist_print_callback(const BridgeList *list, BridgeListPrint print);
+
+// extern BridgeNode *blist_node_front(const BridgeList *list);
+// extern BridgeNode *blist_node_back(const BridgeList *list);
+// extern BridgeNode *blist_node_next(const BridgeNode *node);
+
+// extern void *blist_node_data(const BridgeNode *node);
