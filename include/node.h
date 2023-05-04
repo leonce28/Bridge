@@ -1,12 +1,12 @@
 #pragma once
 
-enum BridgeNodeType {
+typedef enum BridgeNodeType {
     B_Invalid,
     B_Integer,
     B_Decimal,
     B_String,
     B_Pointer,
-};
+} BridgeNodeType;
 
 typedef struct BridgeNode {
     int type;
@@ -16,7 +16,6 @@ typedef struct BridgeNode {
         char *sval;
         void *pval;
     } val;
-    struct BridgeNode *next;
 } BridgeNode;
 
 extern BridgeNode *bnode_create_ival(long long ival);

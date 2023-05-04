@@ -17,7 +17,27 @@
         "iosfwd": "c",
         "test.h": "c",
         "__bit_reference": "c",
-        "__split_buffer": "c"
+        "__split_buffer": "c",
+        "__tree": "c",
+        "map": "c",
+        "atomic": "c",
+        "bitset": "c",
+        "chrono": "c",
+        "cstddef": "c",
+        "__memory": "c",
+        "limits": "c",
+        "optional": "c",
+        "ratio": "c",
+        "system_error": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "*.tcc": "c",
+        "array": "c",
+        "functional": "c",
+        "utility": "c",
+        "variant": "c",
+        "map.h": "c",
+        "pair.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
