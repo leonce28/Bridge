@@ -5,11 +5,16 @@
 #include "list.h"
 #include "node.h"
 
+typedef struct BridgeListNode {
+    BridgeNode *value;
+    struct BridgeListNode *next;
+} BridgeListNode;
+
 struct BridgeList {
     int type;
-    BridgeNode *head;
-    BridgeNode *tail;
     size_t size;
+    BridgeListNode *head;
+    BridgeListNode *tail;
 };
 
 BridgeList *blist_create() 
@@ -28,11 +33,14 @@ BridgeList *blist_create()
 }
 
 void blist_destroy(BridgeList *list) {
-    BridgeNode *next = NULL;
-    BridgeNode *node = list->head;
+    BridgeListNode *next = NULL;
+    BridgeListNode *node = list->head;
 
     while (node) {
         next = node->next;
+        if (node->value) {
+            free(node->value);
+        }
         free(node);
         node = next;
     }
@@ -50,13 +58,18 @@ void blist_push_front(BridgeList *list, BridgeNode *node)
 
     assert(list->type == node->type);
 
-    node->next = list->head;
+    BridgeListNode *lnode = malloc(sizeof(BridgeListNode));
+
+    assert(lnode);
+
+    lnode->value = node;
+    lnode->next = list->head;
 
     if (!list->tail) {
-        list->tail = node;
+        list->tail = lnode;
     }
 
-    list->head = node;
+    list->head = lnode;
     list->size++;
 }
 
@@ -70,15 +83,20 @@ void blist_push_back(BridgeList *list, BridgeNode *node)
 
     assert(list->type == node->type);
 
-    node->next = NULL;
+    BridgeListNode *lnode = malloc(sizeof(BridgeListNode));
+
+    assert(lnode);
+
+    lnode->value = node;
+    lnode->next = NULL;
 
     if (list->tail) {
-        list->tail->next = node;
+        list->tail->next = lnode;
     } else {
-        list->head = node;
+        list->head = lnode;
     }
 
-    list->tail = node;
+    list->tail = lnode;
     list->size++;
 }
 
@@ -130,14 +148,17 @@ void blist_pop_front(BridgeList *list)
         return;
     }
 
-    BridgeNode *node = list->head;
-    list->head = node->next;
+    BridgeListNode *lnode = list->head;
+    list->head = lnode->next;
 
     if (!list->head) {
         list->tail = NULL;
     }
 
-    free(node);
+    if (lnode->value) {
+        free(lnode->value);
+    }
+    free(lnode);
     list->size--;
 }
 
@@ -157,15 +178,18 @@ void blist_pop_back(BridgeList *list)
         return;
     }
 
-    BridgeNode *node = list->head;
-    while (node->next != list->tail) {
-        node = node->next;
+    BridgeListNode *lnode = list->head;
+    while (lnode->next != list->tail) {
+        lnode = lnode->next;
     }
 
+    if (list->tail->value) {
+        free(list->tail->value);
+    }
     free(list->tail);
 
-    node->next = NULL;
-    list->tail = node;
+    lnode->next = NULL;
+    list->tail = lnode;
     list->size--;
 }
 
@@ -173,25 +197,25 @@ void blist_print_normal(const BridgeList *list)
 {
     assert(list);
 
-    BridgeNode *node = list->head;
+    BridgeListNode *lnode = list->head;
 
-    while (node) {
-        switch (node->type) {
+    while (lnode && lnode->value) {
+        switch (lnode->value->type) {
             case B_Integer:
-                printf("%lld ", node->val.ival);
+                printf("%lld ", lnode->value->val.ival);
                 break;
             case B_Decimal:
-                printf("%Lf ", node->val.dval);
+                printf("%Lf ", lnode->value->val.dval);
                 break;
             case B_String:
-                printf("%s ", node->val.sval);
+                printf("%s ", lnode->value->val.sval);
                 break;
             case B_Pointer:
-                printf("%p ", node->val.pval);
+                printf("%p ", lnode->value->val.pval);
                 break;
         }
 
-        node = node->next;
+        lnode = lnode->next;
     }
 }
 
@@ -199,9 +223,9 @@ void blist_print_callback(const BridgeList *list, BridgeListPrint print)
 {
     assert(list && print);
 
-    BridgeNode *node = list->head;
-    while (node) {
-        print(node->val.pval);
+    BridgeListNode *node = list->head;
+    while (node && node->value) {
+        print(node->value->val.pval);
         node = node->next;
     }
 }
