@@ -12,7 +12,12 @@
         "assert.h": "c",
         "any": "c",
         "random": "c",
-        "deque": "c"
+        "deque": "c",
+        "vector": "c",
+        "iosfwd": "c",
+        "test.h": "c",
+        "__bit_reference": "c",
+        "__split_buffer": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

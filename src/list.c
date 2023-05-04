@@ -3,6 +3,7 @@
 #include <assert.h>
 
 #include "list.h"
+#include "node.h"
 
 struct BridgeList {
     int type;
@@ -11,7 +12,8 @@ struct BridgeList {
     size_t size;
 };
 
-BridgeList *blist_create() {
+BridgeList *blist_create() 
+{
     BridgeList *list = malloc(sizeof(BridgeList));
 
     if (!list) {
@@ -38,8 +40,8 @@ void blist_destroy(BridgeList *list) {
     free(list);
 }
 
-void blist_push_front(BridgeList *list, BridgeNode *node) {
-
+void blist_push_front(BridgeList *list, BridgeNode *node) 
+{
     assert(list && node);
 
     if (list->type == B_Invalid) {
@@ -195,6 +197,8 @@ void blist_print_normal(const BridgeList *list)
 
 void blist_print_callback(const BridgeList *list, BridgeListPrint print)
 {
+    assert(list && print);
+
     BridgeNode *node = list->head;
     while (node) {
         print(node->val.pval);

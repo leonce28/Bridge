@@ -1,12 +1,29 @@
 #pragma once
 
-typedef struct Vector Vector;
+typedef struct BridgeVector BridgeVector;
+typedef void(*BridgeVectorPrint)(void *);
 
-extern Vector *vector_create(int elem_size);
-extern void vector_destroy(Vector *vec);
-extern void *vector_at(Vector *vec, int index);
-extern void vector_push_back(Vector *vec, const void *elem);
-extern void vector_pop_back(Vector *vec);
-extern int vector_size(Vector *vec);
+extern BridgeVector *bvector_create();
+extern void bvector_destroy(BridgeVector *vector);
+
+extern void bvector_append_ival(BridgeVector *vector, long long ival);
+extern void bvector_append_dval(BridgeVector *vector, long double dval);
+extern void bvector_append_sval(BridgeVector *vector, const char *sval);
+extern void bvector_append_pval(BridgeVector *vector, void *pval);
+
+extern long long bvector_fetch_ival(BridgeVector *vector, int index);
+extern long double bvector_fetch_dval(BridgeVector *vector, int index);
+extern const char *bvector_fetch_sval(BridgeVector *vector, int index);
+extern void *bvector_fetch_pval(BridgeVector *vector, int index);
+
+extern void bvector_modify_ival(BridgeVector *vector, int index, long long ival);
+extern void bvector_modify_dval(BridgeVector *vector, int index, long double dval);
+extern void bvector_modify_sval(BridgeVector *vector, int index, const char *sval);
+extern void bvector_modify_pval(BridgeVector *vector, int index, void *pval);
+
+extern void bvector_print_normal(const BridgeVector *vector);
+extern void bvector_print_callback(const BridgeVector *vector, BridgeVectorPrint print);
+
+extern int bvector_size(BridgeVector *vector);
 
 

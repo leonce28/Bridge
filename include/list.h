@@ -1,5 +1,4 @@
 #pragma once
-#include "node.h"
 
 typedef struct BridgeList BridgeList;
 typedef void(*BridgeListPrint)(void *);
