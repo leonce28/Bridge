@@ -37,7 +37,14 @@
         "utility": "c",
         "variant": "c",
         "map.h": "c",
-        "pair.h": "c"
+        "pair.h": "c",
+        "__hash_table": "c",
+        "initializer_list": "c",
+        "queue": "c",
+        "set": "c",
+        "unordered_map": "c",
+        "string_view": "c",
+        "__locale": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

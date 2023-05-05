@@ -15,7 +15,7 @@ void string_integer_test()
     int values[] = { 1, 2, 3, 4, 5 };
 
     for (i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
-        pair = bpair_make(&key[i], &values[i]);
+        pair = bpair_make(bnode_create_sval(keys[i]), bnode_create_ival(values[i]));
         bmap_put_pair(map, pair);
     }
 

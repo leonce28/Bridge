@@ -4,11 +4,11 @@
 #include "node.h"
 
 struct BridgePair {
-    void *first;
-    void *second;
+    BridgeNode *first;
+    BridgeNode *second;
 };
 
-BridgePair *bpair_make(void *first, void *second)
+BridgePair *bpair_make(BridgeNode *first, BridgeNode *second)
 {
     assert(first && second);
 
@@ -20,4 +20,15 @@ BridgePair *bpair_make(void *first, void *second)
     pair->second = second;
 
     return pair;
+}
+
+
+inline BridgeNode *bpair_first_node(BridgePair *pair)
+{
+    return pair->first;
+}
+
+inline BridgeNode *bpair_second_node(BridgePair *pair)
+{
+    return pair->second;
 }

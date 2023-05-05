@@ -6,6 +6,7 @@ typedef enum BridgeNodeType {
     B_Decimal,
     B_String,
     B_Pointer,
+    B_Maximum,
 } BridgeNodeType;
 
 typedef struct BridgeNode {

@@ -1,32 +1,32 @@
-#include "map.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
-typedef struct Entry {
-    void* key;
-    void* value;
-    struct Entry* next;
-} Entry;
+#include "map.h"
 
-typedef struct HashMap {
-    size_t size;                // 哈希表大小
-    size_t capacity;            // 哈希表容量
-    size_t key_size;            // 键大小
-    size_t value_size;          // 值大小
-    size_t (*hash_func)(const void* key, size_t key_size);  // 哈希函数
-    int (*key_eq_func)(const void* key1, const void* key2, size_t key_size);   // 键比较函数
-    Entry** table;              // 哈希表数组
-} HashMap;
+#define BRIDGE_MAP_CAPACITY 16
 
-typedef unsigned int uint32_t;
+typedef struct BridgeKeyVal {
+    BridgePair *pair;
+    struct BridgeKeyVal *next;
+} BridgeKeyVal;
 
-uint32_t utf8_hash(const char* str) {
-    uint32_t hash = 5381;
+struct BridgeMap {
+    int size;
+    int k_type;
+    int v_type;
+    int kv_size;
+    int capacity;
+    void *count;
+    void *tables;
+} BridgeMap;
+
+unsigned int utf8_hash(const char *str) {
+    unsigned int hash = 5381;
     while (*str) {
         // 计算UTF-8编码的字符长度
-        size_t len = 0;
+        unsigned int len = 0;
         unsigned char c = (unsigned char)*str;
         if ((c & 0x80) == 0) {
             len = 1;
@@ -38,51 +38,107 @@ uint32_t utf8_hash(const char* str) {
             len = 4;
         }
         // 对每个字符进行哈希运算
-        for (size_t i = 0; i < len; i++) {
-            hash = ((hash << 5) + hash) + (uint32_t)*str;
+        for (unsigned int i = 0; i < len; i++) {
+            hash = ((hash << 5) + hash) + (unsigned int)*str;
             str++;
         }
     }
+
     return hash;
 }
 
-HashMap* create_hash_map(size_t key_size, size_t value_size, size_t (*hash_func)(const void* key, size_t key_size),
-                         int (*key_eq_func)(const void* key1, const void* key2, size_t key_size)) {
-    HashMap* map = (HashMap*) malloc(sizeof(HashMap));
-    if (!map) {
-        return NULL;
-    }
+BridgeMap *bmap_create(BridgeNodeType k_type, BridgeNodeType v_type)
+{
+    assert(k_type > B_Invalid && k_type < B_Maximum);
+    assert(v_type > B_Invalid && v_type < B_Maximum);
+
+    BridgeMap *map = malloc(sizeof(BridgeMap));
+
+    assert(map);
 
     map->size = 0;
-    map->capacity = 16;
-    map->key_size = key_size;
-    map->value_size = value_size;
-    map->hash_func = hash_func;
-    map->key_eq_func = key_eq_func;
-    map->table = (Entry**) malloc(map->capacity * sizeof(Entry*));
-    if (!map->table) {
-        free(map);
-        return NULL;
-    }
+    map->k_type = k_type;
+    map->v_type = v_type;
+    map->kv_size = sizeof(BridgeKeyVal);
+    map->capacity = BRIDGE_MAP_CAPACITY;
+    map->k_size = malloc(map->capacity * sizeof(int));
+    map->tables = malloc(map->capacity * map->kv_size);
 
-    memset(map->table, 0, map->capacity * sizeof(Entry*));
+    assert(map->k_size);
+    memset(map->k_size, 0, map->capacity * sizeof(int));
+
+    assert(map->tables);
+    memset(map->tables, 0, map->capacity * map->kv_size);
 
     return map;
 }
 
-void destroy_hash_map(HashMap* map) {
-    for (size_t i = 0; i < map->capacity; i++) {
-        Entry* entry = map->table[i];
-        while (entry) {
-            Entry* next = entry->next;
-            free(entry->key);
-            free(entry->value);
-            free(entry);
-            entry = next;
+void bvector_destroy(BridgeMap *map)
+{
+    BridgeKeyVal *kv = NULL;
+    BridgeKeyVal *next = NULL;
+    for (int i = 0; i < map->capacity; i++) {
+        kv = (BridgeKeyVal *)(map->tables + (i * map->kv_size));
+        if (!kv) {
+            continue;
+        }
+
+        kv = kv->next;
+        while (kv) {
+            next = kv->next;
+            free(kv->key);
+            free(kv->val);
+            free(kv);
+            kv = next;
         }
     }
-    free(map->table);
+
+    free(map->tables);
     free(map);
+}
+
+void bmap_put_pair(BridgeMap *map, BridgePair *pair)
+{
+    assert(map && pair && pair->first && pair->second);
+    assert(map->k_type == pair->first->type);
+    assert(map->v_type == pair->second->type);
+
+    int index;
+    int *count = NULL;
+    BridgeKeyVal *kv = NULL;
+    BridgeKeyVal *new_kv = NULL;
+
+    index = bmap_hash_node(pair->first) % map->capacity;
+
+    count = (int *)(map->k_size + (index * sizeof(int)));
+    if (*count == 0) {
+        memcpy(map->tables + (index * map->size), bmap_kv_create(pair), map->kv_size);
+        goto success;
+    }
+
+    kv = *(BridgeKeyVal *)(map->tables + (index * map->kv_size));
+    assert(kv && kv->pair);
+
+    while (kv) {
+        if (bnode_is_equal(bpair_first_node(kv->pair), bpair_first_node(pair))) {
+            bnode_value_move(bpair_second_node(kv->pair), bpair_second_node(pair));
+            goto success;
+        }
+
+        if (!kv->next) {
+            kv->next = bmap_kv_create(pair);
+            goto success;
+        }
+
+        kv = kv->next;
+        continue;
+    }
+
+success:
+    (*count)++;
+    map->size++;
+
+    bmap_table_rehash(map);
 }
 
 void* hash_map_get(HashMap* map, const void* key) {
@@ -95,64 +151,6 @@ void* hash_map_get(HashMap* map, const void* key) {
         entry = entry->next;
     }
     return NULL;
-}
-
-void hash_map_put(HashMap* map, const void* key, const void* value) {
-    size_t index = map->hash_func(key, map->key_size) % map->capacity;
-    Entry* entry = map->table[index];
-    while (entry) {
-        if (map->key_eq_func(entry->key, key, map->key_size)) {
-            memcpy(entry->value, value, map->value_size);
-            return;
-        }
-        entry = entry->next;
-    }
-    Entry* new_entry = (Entry*) malloc(sizeof(Entry));
-    if (!new_entry) {
-        return;
-    }
-
-    new_entry->key = malloc(map->key_size);
-    if (!new_entry->key) {
-        free(new_entry);
-        return;
-    }
-    memcpy(new_entry->key, key, map->key_size);
-
-    new_entry->value = malloc(map->value_size);
-    if (!new_entry->value) {
-        free(new_entry->key);
-        free(new_entry);
-        return;
-    }
-    memcpy(new_entry->value, value, map->value_size);
-
-    new_entry->next = map->table[index];
-    map->table[index] = new_entry;
-
-    map->size++;
-
-    if (map->size > map->capacity * 0.75) {
-        HashMap* new_map = create_hash_map(map->key_size, map->value_size, map->hash_func, map->key_eq_func);
-        if (!new_map) {
-            return;
-        }
-        for (size_t i = 0; i < map->capacity; i++) {
-            Entry* entry = map->table[i];
-            while (entry) {
-                hash_map_put(new_map, entry->key, entry->value);
-                Entry* next = entry->next;
-                free(entry->key);
-                free(entry->value);
-                free(entry);
-                entry = next;
-            }
-        }
-        free(map->table);
-        map->table = new_map->table;
-        map->capacity = new_map->capacity;
-        free(new_map);
-    }
 }
 
 void hash_map_remove(HashMap* map, const void* key) {
@@ -175,33 +173,4 @@ void hash_map_remove(HashMap* map, const void* key) {
         prev = entry;
         entry = entry->next;
     }
-}
-
-void hash_map_clear(HashMap* map) {
-    for (size_t i = 0; i < map->capacity; i++) {
-        Entry* entry = map->table[i];
-        while (entry) {
-            Entry* next = entry->next;
-            free(entry->key);
-            free(entry->value);
-            free(entry);
-            entry = next;
-        }
-        map->table[i] = NULL;
-    }
-    map->size = 0;
-}
-
-size_t hash_string(const void* key, size_t key_size) {
-    const char* str = (const char*) key;
-    size_t hash = 0;
-    for (size_t i = 0; i < key_size; i++) {
-        hash = hash * 31 + str[i];
-    }
-    return hash;
-}
-
-
-int compare_string(const void* key1, const void* key2, size_t key_size) {
-    return memcmp(key1, key2, key_size) == 0;
 }
