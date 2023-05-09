@@ -26,7 +26,7 @@ Student *student_create(int no, int age, const char *name)
     return stu;
 }
 
-void student_print(void *data)
+void student_print(const void *data)
 {
     if (!data) {
         return;

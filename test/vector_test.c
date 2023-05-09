@@ -4,129 +4,127 @@
 
 void integer_test()
 {
-    BridgeVector *vector = bvector_create();
+    BridgeVector *vector = bvector_create(B_Integer);
 
     if (!vector) {
         return;
     }
 
-    bvector_append_ival(vector, 1);
-    bvector_append_ival(vector, 2);
-    bvector_append_ival(vector, 3);
-    bvector_append_ival(vector, 4);
-    bvector_append_ival(vector, 5);
-    bvector_append_ival(vector, 6);
+    for (int i = 0; i < 10; ++i) {
+        bvector_append(vector, bnode_integer(i));
+    }
 
     bvector_print_normal(vector);
     printf("\n");
 
-    bvector_modify_ival(vector, 1, 11);
-    bvector_modify_ival(vector, 3, 33);
-    bvector_modify_ival(vector, 4, 44);
+    bnode_set_integer(bvector_fetch(vector, 1), 11);
+    bnode_set_integer(bvector_fetch(vector, 3), 33);
+    bnode_set_integer(bvector_fetch(vector, 4), 44);
 
     bvector_print_normal(vector);
     printf("\n");
 
-    printf("fetch index[%d] value: %lld from vector.\n", 1, bvector_fetch_ival(vector, 1));
-    printf("fetch index[%d] value: %lld from vector.\n", 4, bvector_fetch_ival(vector, 4));
+    printf("fetch index[%d] value: %lld from vector.\n", 1, bnode_to_integer(bvector_fetch(vector, 1)));
+    printf("fetch index[%d] value: %lld from vector.\n", 4, bnode_to_integer(bvector_fetch(vector, 4)));
 
     bvector_destroy(vector);
 }
 
 void decimal_test()
 {
-    BridgeVector *vector = bvector_create();
+    BridgeVector *vector = bvector_create(B_Decimal);
 
     if (!vector) {
         return;
     }
 
-    bvector_append_dval(vector, 1.1);
-    bvector_append_dval(vector, 2.2);
-    bvector_append_dval(vector, 3.3);
-    bvector_append_dval(vector, 4.4);
-    bvector_append_dval(vector, 5.5);
-    bvector_append_dval(vector, 6.6);
+    float val = 1.142;
+    for (int i = 0; i < 10; ++i) {
+        bvector_append(vector, bnode_decimal(i));
+        val += 1.131;
+    }
 
     bvector_print_normal(vector);
 
     printf("\n");
 
-    bvector_modify_dval(vector, 1, 11.11);
-    bvector_modify_dval(vector, 3, 33.33);
-    bvector_modify_dval(vector, 4, 44.44);
+    bnode_set_decimal(bvector_fetch(vector, 1), 141.121);
+    bnode_set_decimal(bvector_fetch(vector, 3), 323.383);
+    bnode_set_decimal(bvector_fetch(vector, 4), 414.474);
 
     bvector_print_normal(vector);
     printf("\n");
 
-    printf("fetch index[%d] value: %Lf from vector.\n", 1, bvector_fetch_dval(vector, 1));
-    printf("fetch index[%d] value: %Lf from vector.\n", 4, bvector_fetch_dval(vector, 4));
+    printf("fetch index[%d] value: %Lf from vector.\n", 1, bnode_to_decimal(bvector_fetch(vector, 1)));
+    printf("fetch index[%d] value: %Lf from vector.\n", 4, bnode_to_decimal(bvector_fetch(vector, 4)));
 
     bvector_destroy(vector);
 }
 
 void string_test()
 {
-    BridgeVector *vector = bvector_create();
+    BridgeVector *vector = bvector_create(B_String);
 
     if (!vector) {
         return;
     }
 
-    bvector_append_sval(vector, "string1");
-    bvector_append_sval(vector, "string2");
-    bvector_append_sval(vector, "string3");
-    bvector_append_sval(vector, "string4");
-    bvector_append_sval(vector, "string5");
-    bvector_append_sval(vector, "string6");
-
-    bvector_print_normal(vector);
-
-    printf("\n");
-
-    bvector_modify_sval(vector, 1, "str111");
-    bvector_modify_sval(vector, 3, "str333");
-    bvector_modify_sval(vector, 4, "str444");
+    bvector_append(vector, bnode_string("string1"));
+    bvector_append(vector, bnode_string("string2"));
+    bvector_append(vector, bnode_string("string3"));
+    bvector_append(vector, bnode_string("string4"));
+    bvector_append(vector, bnode_string("string5"));
+    bvector_append(vector, bnode_string("string6"));
 
     bvector_print_normal(vector);
     printf("\n");
 
-    printf("fetch index[%d] value: %s from vector.\n", 1, bvector_fetch_sval(vector, 1));
-    printf("fetch index[%d] value: %s from vector.\n", 4, bvector_fetch_sval(vector, 4));
+    bnode_set_string(bvector_fetch(vector, 1), "str111");
+    bnode_set_string(bvector_fetch(vector, 3), "str333");
+    bnode_set_string(bvector_fetch(vector, 4), "str444");
+
+    bvector_print_normal(vector);
+    printf("\n");
+
+    printf("fetch index[%d] value: %s from vector.\n", 1, bnode_to_string(bvector_fetch(vector, 1)));
+    printf("fetch index[%d] value: %s from vector.\n", 4, bnode_to_string(bvector_fetch(vector, 4)));
 
     bvector_destroy(vector);
 }
 
-void pointer_test()
+void object_test()
 {
-    BridgeVector *vector = bvector_create();
+    BridgeVector *vector = bvector_create(B_Object);
 
     if (!vector) {
         return;
     }
 
-    bvector_append_pval(vector, student_create(1, 18, "zhangsan"));
-    bvector_append_pval(vector, student_create(2, 27, "lisi"));
-    bvector_append_pval(vector, student_create(3, 36, "wangwu"));
-    bvector_append_pval(vector, student_create(4, 45, "liuliu"));
-    bvector_append_pval(vector, student_create(5, 54, "qiqi"));
-    bvector_append_pval(vector, student_create(6, 63, "laoba"));
+    int i, size = sizeof(Student);
+    Student student;
+
+    for (i = 0; i < 10; ++i) {
+        student.no = i + 1;
+        student.age = 18 + i * 2;
+        snprintf(student.name, 20, "name%d", i);
+        bvector_append(vector, bnode_object2(&student, size));
+    }
 
     bvector_print_callback(vector, student_print);
-
     printf("\n");
 
-    bvector_modify_pval(vector, 1, student_create(1, 81, "zangshan"));
-    bvector_modify_pval(vector, 3, student_create(3, 63, "wawuwu"));
-    bvector_modify_pval(vector, 4, student_create(4, 54, "niuniu"));
+    student.no = 100;
+    student.age = 512;
+    snprintf(student.name, 20, "name%d", 100);
+    bvector_set_object(vector, 1, &student, size);
+    bvector_set_object(vector, 3, &student, size);
+    bvector_set_object(vector, 4, &student, size);
 
     bvector_print_callback(vector, student_print);
-
     printf("\n");
 
-    student_print(bvector_fetch_pval(vector, 1));
-    student_print(bvector_fetch_pval(vector, 4));
-
+    student_print(bnode_to_object(bvector_fetch(vector, 1)));
+    student_print(bnode_to_object(bvector_fetch(vector, 4)));
     printf("\n");
 
     bvector_destroy(vector);
@@ -140,7 +138,7 @@ int main() {
     printf("---------------------------\n");
     string_test();
     printf("---------------------------\n");
-    pointer_test();
+    object_test();
     printf("---------------------------\n");
     return 0;
 }

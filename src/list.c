@@ -3,7 +3,6 @@
 #include <assert.h>
 
 #include "list.h"
-#include "node.h"
 
 typedef struct BridgeListNode {
     BridgeNode *value;
@@ -11,13 +10,13 @@ typedef struct BridgeListNode {
 } BridgeListNode;
 
 struct BridgeList {
-    int type;
-    size_t size;
+    int size;
+    BridgeNodeType type;
     BridgeListNode *head;
     BridgeListNode *tail;
 };
 
-BridgeList *blist_create() 
+BridgeList *blist_create(BridgeNodeType type) 
 {
     BridgeList *list = malloc(sizeof(BridgeList));
 
@@ -28,7 +27,7 @@ BridgeList *blist_create()
     list->head = NULL;
     list->tail = NULL;
     list->size = 0;
-    list->type = B_Invalid;
+    list->type = type;
     return list;
 }
 
@@ -48,21 +47,15 @@ void blist_destroy(BridgeList *list) {
     free(list);
 }
 
-void blist_push_front(BridgeList *list, BridgeNode *node) 
+void blist_push_front(BridgeList *list, const BridgeNode *node) 
 {
-    assert(list && node);
-
-    if (list->type == B_Invalid) {
-        list->type = node->type;
-    }
-
-    assert(list->type == node->type);
+    assert(list && node && list->type == bnode_type(node));
 
     BridgeListNode *lnode = malloc(sizeof(BridgeListNode));
 
     assert(lnode);
 
-    lnode->value = node;
+    lnode->value = bnode_create1(node);
     lnode->next = list->head;
 
     if (!list->tail) {
@@ -73,21 +66,15 @@ void blist_push_front(BridgeList *list, BridgeNode *node)
     list->size++;
 }
 
-void blist_push_back(BridgeList *list, BridgeNode *node) 
+void blist_push_back(BridgeList *list, const BridgeNode *node)
 {
-    assert(list && node);
-
-    if (list->type == B_Invalid) {
-        list->type = node->type;
-    }
-
-    assert(list->type == node->type);
+    assert(list && node && list->type == bnode_type(node));
 
     BridgeListNode *lnode = malloc(sizeof(BridgeListNode));
 
     assert(lnode);
 
-    lnode->value = node;
+    lnode->value = bnode_create1(node);
     lnode->next = NULL;
 
     if (list->tail) {
@@ -98,46 +85,6 @@ void blist_push_back(BridgeList *list, BridgeNode *node)
 
     list->tail = lnode;
     list->size++;
-}
-
-void blist_push_front_ival(BridgeList *list, long long ival)
-{
-    blist_push_front(list, bnode_create_ival(ival));
-}
-
-void blist_push_front_dval(BridgeList *list, long double dval)
-{
-    blist_push_front(list, bnode_create_dval(dval));
-}
-
-void blist_push_front_sval(BridgeList *list, const char *sval)
-{
-    blist_push_front(list, bnode_create_sval(sval));
-}
-
-void blist_push_front_pval(BridgeList *list, void *pval)
-{
-    blist_push_front(list, bnode_create_pval(pval));
-}
-
-void blist_push_back_ival(BridgeList *list, long long ival)
-{
-    blist_push_back(list, bnode_create_ival(ival));
-}
-
-void blist_push_back_dval(BridgeList *list, long double dval)
-{
-    blist_push_back(list, bnode_create_dval(dval));
-}
-
-void blist_push_back_sval(BridgeList *list, const char *sval)
-{
-    blist_push_back(list, bnode_create_sval(sval));
-}
-
-void blist_push_back_pval(BridgeList *list, void *pval)
-{
-    blist_push_back(list, bnode_create_pval(pval));
 }
 
 void blist_pop_front(BridgeList *list) 
@@ -200,21 +147,24 @@ void blist_print_normal(const BridgeList *list)
     BridgeListNode *lnode = list->head;
 
     while (lnode && lnode->value) {
-        switch (lnode->value->type) {
+        switch (bnode_type(lnode->value)) {
             case B_Integer:
-                printf("%lld ", lnode->value->val.ival);
+                printf("%lld ", bnode_to_integer(lnode->value));
                 break;
             case B_Decimal:
-                printf("%Lf ", lnode->value->val.dval);
+                printf("%Lf ", bnode_to_decimal(lnode->value));
                 break;
             case B_String:
-                printf("%s ", lnode->value->val.sval);
+                printf("%s ", bnode_to_string(lnode->value));
                 break;
-            case B_Pointer:
-                printf("%p ", lnode->value->val.pval);
+            case B_Object:
+                printf("%p ", bnode_to_object(lnode->value));
+                break;
+            case B_Invalid:
+            case B_Maximum:
+            default:
                 break;
         }
-
         lnode = lnode->next;
     }
 }
@@ -223,9 +173,9 @@ void blist_print_callback(const BridgeList *list, BridgeListPrint print)
 {
     assert(list && print);
 
-    BridgeListNode *node = list->head;
-    while (node && node->value) {
-        print(node->value->val.pval);
-        node = node->next;
+    BridgeListNode *lnode = list->head;
+    while (lnode && lnode->value) {
+        print(bnode_to_object(lnode->value));
+        lnode = lnode->next;
     }
 }

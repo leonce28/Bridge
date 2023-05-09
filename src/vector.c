@@ -17,15 +17,16 @@ struct BridgeVector {
     void *elements;
 };
 
-BridgeVector *bvector_create()
+BridgeVector *bvector_create(BridgeNodeType type)
 {
     BridgeVector *vector = malloc(sizeof(BridgeVector));
 
     assert(vector);
 
     vector->size = 0;
+    vector->type = type;
     vector->capacity = BRIDGE_VECTOR_CAPACITY;
-    vector->esize = sizeof(BridgeNode);
+    vector->esize = bnode_size();
     vector->elements = malloc(vector->capacity * vector->esize);
 
     assert(vector->elements);
@@ -49,15 +50,9 @@ void bvector_expand(BridgeVector *vector)
     assert(vector->elements);
 }
 
-void bvector_append(BridgeVector *vector, BridgeNode *node)
+void bvector_append(BridgeVector *vector, const BridgeNode *node)
 {
-    assert(vector && node);
-
-    if (vector->type == B_Invalid) {
-        vector->type = node->type;
-    }
-
-    assert(vector->type == node->type);
+    assert(vector && node && vector->type == bnode_type(node));
 
     if (vector->size == vector->capacity) { 
         bvector_expand(vector);
@@ -68,26 +63,6 @@ void bvector_append(BridgeVector *vector, BridgeNode *node)
     vector->size++;
 }
 
-void bvector_append_ival(BridgeVector *vector, long long ival)
-{
-    bvector_append(vector, bnode_create_ival(ival));
-}
-
-void bvector_append_dval(BridgeVector *vector, long double dval)
-{
-    bvector_append(vector, bnode_create_dval(dval));
-}
-
-void bvector_append_sval(BridgeVector *vector, const char *sval)
-{
-    bvector_append(vector, bnode_create_sval(sval));
-}
-
-void bvector_append_pval(BridgeVector *vector, void *pval)
-{
-    bvector_append(vector, bnode_create_pval(pval));
-}
-
 BridgeNode *bvector_fetch(BridgeVector *vector, int index) 
 {
     assert(vector && index < vector->size);
@@ -95,7 +70,7 @@ BridgeNode *bvector_fetch(BridgeVector *vector, int index)
     return vector->elements + index * vector->esize;
 }
 
-long long bvector_fetch_ival(BridgeVector *vector, int index)
+void bvector_set_integer(BridgeVector *vector, int index, long long ival)
 {
     assert(vector && vector->type == B_Integer);
 
@@ -103,10 +78,10 @@ long long bvector_fetch_ival(BridgeVector *vector, int index)
 
     assert(node);
 
-    return node->val.ival;
+    bnode_set_integer(node, ival);
 }
 
-long double bvector_fetch_dval(BridgeVector *vector, int index)
+void bvector_set_decimal(BridgeVector *vector, int index, long double dval)
 {
     assert(vector && vector->type == B_Decimal);
 
@@ -114,54 +89,10 @@ long double bvector_fetch_dval(BridgeVector *vector, int index)
 
     assert(node);
 
-    return node->val.dval;
+    bnode_set_decimal(node, dval);
 }
 
-const char *bvector_fetch_sval(BridgeVector *vector, int index)
-{
-    assert(vector && vector->type == B_String);
-
-    BridgeNode *node = bvector_fetch(vector, index);
-
-    assert(node);
-
-    return node->val.sval;
-}
-
-void *bvector_fetch_pval(BridgeVector *vector, int index)
-{
-    assert(vector && vector->type == B_Pointer);
-
-    BridgeNode *node = bvector_fetch(vector, index);
-
-    assert(node);
-
-    return node->val.pval;
-}
-
-void bvector_modify_ival(BridgeVector *vector, int index, long long ival)
-{
-    assert(vector && vector->type == B_Integer);
-
-    BridgeNode *node = bvector_fetch(vector, index);
-
-    assert(node);
-
-    node->val.ival = ival;
-}
-
-void bvector_modify_dval(BridgeVector *vector, int index, long double dval)
-{
-    assert(vector && vector->type == B_Decimal);
-
-    BridgeNode *node = bvector_fetch(vector, index);
-
-    assert(node);
-
-    node->val.dval = dval;
-}
-
-void bvector_modify_sval(BridgeVector *vector, int index, const char *sval)
+void bvector_set_string(BridgeVector *vector, int index, const char *sval)
 {
     int l1, l2;
     assert(vector && vector->type == B_String && sval);
@@ -170,31 +101,19 @@ void bvector_modify_sval(BridgeVector *vector, int index, const char *sval)
 
     assert(node);
 
-    l1 = strlen(node->val.sval);
-    l2 = strlen(sval);
-
-    if (l2 > l1) {
-        node->val.sval = realloc(node->val.sval, l2 + 1);
-    }
-
-    strncpy(node->val.sval, sval, l2);
-
-    node->val.sval[l2] = '\0';
+    bnode_set_string(node, sval);
 }
 
-void bvector_modify_pval(BridgeVector *vector, int index, void *pval)
+void bvector_set_object(BridgeVector *vector, int index, const void *oval, int length)
 {
     void *old = NULL;
-    assert(vector && vector->type == B_Pointer && pval);
+    assert(vector && vector->type == B_Object && oval);
 
     BridgeNode *node = bvector_fetch(vector, index);
 
     assert(node);
 
-    old = node->val.pval;
-    node->val.pval = pval;
-
-    free(old);
+    bnode_set_object(node, oval, length);
 }
 
 void bvector_print_normal(const BridgeVector *vector)
@@ -206,18 +125,22 @@ void bvector_print_normal(const BridgeVector *vector)
     for (int i = 0; i < vector->size; ++i) {
         node = (BridgeNode *)(vector->elements + i * vector->esize);
 
-        switch (node->type) {
+        switch (bnode_type(node)) {
             case B_Integer:
-                printf("%lld ", node->val.ival);
+                printf("%lld ", bnode_to_integer(node));
                 break;
             case B_Decimal:
-                printf("%Lf ", node->val.dval);
+                printf("%Lf ", bnode_to_decimal(node));
                 break;
             case B_String:
-                printf("%s ", node->val.sval);
+                printf("%s ", bnode_to_string(node));
                 break;
-            case B_Pointer:
-                printf("%p ", node->val.pval);
+            case B_Object:
+                printf("%p ", bnode_to_object(node));
+                break;
+            case B_Invalid:
+            case B_Maximum:
+            default:
                 break;
         }
     }
@@ -231,7 +154,7 @@ void bvector_print_callback(const BridgeVector *vector, BridgeVectorPrint print)
 
     for (int i = 0; i < vector->size; ++i) {
         node = (BridgeNode *)(vector->elements + i * vector->esize);
-        print(node->val.pval);
+        print(bnode_object(node));
     }
 }
 

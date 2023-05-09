@@ -44,7 +44,12 @@
         "set": "c",
         "unordered_map": "c",
         "string_view": "c",
-        "__locale": "c"
+        "__locale": "c",
+        "__config": "c",
+        "__nullptr": "c",
+        "sstream": "c",
+        "algorithm": "c",
+        "string.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

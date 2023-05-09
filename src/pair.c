@@ -22,13 +22,20 @@ BridgePair *bpair_make(BridgeNode *first, BridgeNode *second)
     return pair;
 }
 
+void bpair_destroy(BridgePair *pair)
+{
+    assert(pair);
 
-inline BridgeNode *bpair_first_node(BridgePair *pair)
+    free(pair->first);
+    free(pair->second);
+}
+
+BridgeNode *bpair_first(BridgePair *pair)
 {
     return pair->first;
 }
 
-inline BridgeNode *bpair_second_node(BridgePair *pair)
+BridgeNode *bpair_second(BridgePair *pair)
 {
     return pair->second;
 }
