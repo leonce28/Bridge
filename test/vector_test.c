@@ -17,9 +17,9 @@ void integer_test()
     bvector_print(vector);
     printf("\n");
 
-    bnode_set_integer(bvector_fetch(vector, 1), 11);
-    bnode_set_integer(bvector_fetch(vector, 3), 33);
-    bnode_set_integer(bvector_fetch(vector, 4), 44);
+    bvector_set_integer(vector, 1, 11);
+    bvector_set_integer(vector, 3, 33);
+    bvector_set_integer(vector, 4, 44);
 
     bvector_print(vector);
     printf("\n");
@@ -47,9 +47,9 @@ void decimal_test()
     bvector_print(vector);
     printf("\n");
 
-    bnode_set_decimal(bvector_fetch(vector, 1), 141.121);
-    bnode_set_decimal(bvector_fetch(vector, 3), 323.383);
-    bnode_set_decimal(bvector_fetch(vector, 4), 414.474);
+    bvector_set_decimal(vector, 1, 141.121);
+    bvector_set_decimal(vector, 3, 323.383);
+    bvector_set_decimal(vector, 4, 414.474);
 
     bvector_print(vector);
     printf("\n");
@@ -78,9 +78,9 @@ void string_test()
     bvector_print(vector);
     printf("\n");
 
-    bnode_set_string(bvector_fetch(vector, 1), "str111");
-    bnode_set_string(bvector_fetch(vector, 3), "str333");
-    bnode_set_string(bvector_fetch(vector, 4), "str444");
+    bvector_set_string(vector, 1, "str111");
+    bvector_set_string(vector, 3, "str333");
+    bvector_set_string(vector, 4, "str444");
 
     bvector_print(vector);
     printf("\n");
@@ -115,9 +115,9 @@ void object_test()
     bvector_print(vector);
     printf("\n");
 
-    bvector_set_object(vector, 1, bnode_object(student_create(100, 90, "name101")));
-    bvector_set_object(vector, 3, bnode_object(student_create(101, 94, "name102")));
-    bvector_set_object(vector, 4, bnode_object(student_create(102, 98, "name103")));
+    bvector_set_object(vector, 1, student_create(100, 90, "name101"));
+    bvector_set_object(vector, 3, student_create(101, 94, "name102"));
+    bvector_set_object(vector, 4, student_create(102, 98, "name103"));
 
     bvector_print(vector);
     printf("\n");
