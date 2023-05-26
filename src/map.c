@@ -78,10 +78,10 @@ unsigned int bmap_hash_string(const char *string)
     return hash;
 }
 
-unsigned int bmap_hash_object(const void *object, int length)
+unsigned int bmap_hash_object(const void *object)
 {
     // undo
-    return length;
+    return sizeof(object);
 }
 
 unsigned int bmap_hash_node(const BridgeNode *node)
@@ -100,7 +100,7 @@ unsigned int bmap_hash_node(const BridgeNode *node)
             value = bmap_hash_string(bnode_to_string(node));
             break;
         case B_Object:
-            value = bmap_hash_object(bnode_to_object(node), bnode_length(node));
+            value = bmap_hash_object(bnode_to_object(node));
             break;
         case B_Invalid:
         case B_Maximum:
@@ -192,7 +192,7 @@ void bmap_put_pair(BridgeMap *map, BridgePair *pair)
     node = root->root;
     while (node) {
         if (bnode_is_equal(bpair_first(node->pair), bpair_first(pair))) {
-            bnode_transfer(bpair_second(node->pair), bpair_second(pair));
+            // bnode_transfer(bpair_second(node->pair), bpair_second(pair));
             goto success;
         }
 

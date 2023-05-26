@@ -26,12 +26,31 @@ Student *student_create(int no, int age, const char *name)
     return stu;
 }
 
-void student_print(const void *data)
+int student_tostr(const void *data, char *dst, int len)
 {
-    if (!data) {
-        return;
+    if (!data || !dst || len <= 0) {
+        return -1;
     }
 
     Student *stu = (Student *)data;
-    printf("(%d, %d, %s) ", stu->no, stu->age, stu->name);
+    snprintf(dst, len, "{no: %d, age: %d, name: %s} ", stu->no, stu->age, stu->name);
+
+    return 0;
+}
+
+int student_free(void *data)
+{
+    if (!data) {
+        return -1;
+    }
+
+    free(data);
+
+    return 0;
+}
+
+int student_compare(const void *data1, const void *data2)
+{
+    // undo
+    return 0;
 }

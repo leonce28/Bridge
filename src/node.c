@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -5,7 +6,7 @@
 
 struct BridgeNode {
     int type;
-    int length;
+    int extra;
     union {
         long long ival;
         long double dval;
@@ -28,7 +29,7 @@ BridgeNode *bnode_integer(long long ival)
     
     node->type = B_Integer;
     node->val.ival = ival;
-
+    
     return node;
 }
 
@@ -49,8 +50,9 @@ BridgeNode *bnode_string(const char *sval)
     int len = strlen(sval);
     BridgeNode *node = bnode_create();
     
+    node->extra = len;
     node->type = B_String;
-    node->val.sval = malloc(len + 1);;
+    node->val.sval = malloc(len + 1);
 
     assert(node->val.sval);
 
@@ -69,20 +71,6 @@ BridgeNode *bnode_object(void *oval)
     
     node->type = B_Object;
     node->val.oval = oval;
-
-    return node;
-}
-
-BridgeNode *bnode_object2(const void *oval, int length)
-{
-    assert(oval && length > 0);
-
-    BridgeNode *node = bnode_create();
-    
-    node->length = length;
-    node->type = B_Object;
-
-    memcpy(node->val.oval, oval, length);
 
     return node;
 }
@@ -131,25 +119,29 @@ void bnode_set_decimal(BridgeNode *node, long double dval)
 
 void bnode_set_string(BridgeNode *node, const char *sval)
 {
-    assert(node && node->type == B_String && sval);
+    assert(node && node->type == B_String&& sval);
 
     int len = strlen(sval);
     
-    if (len > node->length) {
+    if (len > node->extra) {
         node->val.sval = realloc(node->val.sval, len + 1);
-        assert(node->val.sval);
-        node->length = len;
     }
+
+    assert(node->val.sval);
 
     strncpy(node->val.sval, sval, len);
     node->val.sval[len] = '\0';
 }
 
-void bnode_set_object(BridgeNode *node, const void *oval, int length)
+void *bnode_set_object(BridgeNode *node, void *oval)
 {
     assert(node && node->type == B_Object && oval);
 
-    memcpy(node->val.oval, oval, length);
+    void *del = node->val.oval;
+    
+    node->val.oval = oval;
+
+    return del;
 }
 
 int bnode_size()
@@ -157,33 +149,31 @@ int bnode_size()
     return sizeof(BridgeNode);
 }
 
-int bnode_length(const BridgeNode *node)
+void bnode_tostr(const BridgeNode *node, char *dst, int max)
 {
-    return node->length;
+    assert(node && dst && max > 0);
+
+    switch (bnode_type(node)) {
+        case B_Integer:
+            snprintf(dst, max, "%lld", bnode_to_integer(node));
+            break;
+        case B_Decimal:
+            snprintf(dst, max, "%Lf", bnode_to_decimal(node));
+            break;
+        case B_String:
+            snprintf(dst, max, "%s", bnode_to_string(node));
+            break;
+        case B_Object:
+            snprintf(dst, max, "%p", bnode_to_object(node));
+            break;
+        default:
+            break;
+    }
 }
 
 BridgeNodeType bnode_type(const BridgeNode *node)
 {
     return node->type;
-}
-
-void bnode_copy(BridgeNode *dst, const BridgeNode *src)
-{
-    assert(dst && src);
-    
-    dst->type = src->type;
-    dst->length = src->length;
-
-    memcpy(dst->val.oval, src->val.oval, dst->length);
-}
-
-BridgeNode *bnode_create1(const BridgeNode *node)
-{
-    BridgeNode *dst = bnode_create();
-
-    bnode_copy(dst, node);
-
-    return dst;
 }
 
 bool bnode_is_equal(const BridgeNode *node1, const BridgeNode *node2)
@@ -195,18 +185,3 @@ bool bnode_not_equal(const BridgeNode *node1, const BridgeNode *node2)
 {
     return bnode_is_equal(node1, node2);
 }
-
-void bnode_transfer(BridgeNode *dst, BridgeNode *src)
-{
-    assert(dst && src && dst->type == src->type);
-
-    void *temp = src->val.oval;
-    int length = src->length;
-
-    src->length = dst->length;
-    src->val.oval = dst->val.oval;
-
-    dst->length = length;
-    dst->val.oval = temp;
-}
-

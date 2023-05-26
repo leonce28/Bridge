@@ -4,7 +4,7 @@
 
 void integer_test()
 {
-    BridgeVector *vector = bvector_create(B_Integer);
+    BridgeVector *vector = bvector_create();
 
     if (!vector) {
         return;
@@ -14,14 +14,14 @@ void integer_test()
         bvector_append(vector, bnode_integer(i));
     }
 
-    bvector_print_normal(vector);
+    bvector_print(vector);
     printf("\n");
 
     bnode_set_integer(bvector_fetch(vector, 1), 11);
     bnode_set_integer(bvector_fetch(vector, 3), 33);
     bnode_set_integer(bvector_fetch(vector, 4), 44);
 
-    bvector_print_normal(vector);
+    bvector_print(vector);
     printf("\n");
 
     printf("fetch index[%d] value: %lld from vector.\n", 1, bnode_to_integer(bvector_fetch(vector, 1)));
@@ -32,7 +32,7 @@ void integer_test()
 
 void decimal_test()
 {
-    BridgeVector *vector = bvector_create(B_Decimal);
+    BridgeVector *vector = bvector_create();
 
     if (!vector) {
         return;
@@ -44,15 +44,14 @@ void decimal_test()
         val += 1.131;
     }
 
-    bvector_print_normal(vector);
-
+    bvector_print(vector);
     printf("\n");
 
     bnode_set_decimal(bvector_fetch(vector, 1), 141.121);
     bnode_set_decimal(bvector_fetch(vector, 3), 323.383);
     bnode_set_decimal(bvector_fetch(vector, 4), 414.474);
 
-    bvector_print_normal(vector);
+    bvector_print(vector);
     printf("\n");
 
     printf("fetch index[%d] value: %Lf from vector.\n", 1, bnode_to_decimal(bvector_fetch(vector, 1)));
@@ -63,7 +62,7 @@ void decimal_test()
 
 void string_test()
 {
-    BridgeVector *vector = bvector_create(B_String);
+    BridgeVector *vector = bvector_create();
 
     if (!vector) {
         return;
@@ -76,14 +75,14 @@ void string_test()
     bvector_append(vector, bnode_string("string5"));
     bvector_append(vector, bnode_string("string6"));
 
-    bvector_print_normal(vector);
+    bvector_print(vector);
     printf("\n");
 
     bnode_set_string(bvector_fetch(vector, 1), "str111");
     bnode_set_string(bvector_fetch(vector, 3), "str333");
     bnode_set_string(bvector_fetch(vector, 4), "str444");
 
-    bvector_print_normal(vector);
+    bvector_print(vector);
     printf("\n");
 
     printf("fetch index[%d] value: %s from vector.\n", 1, bnode_to_string(bvector_fetch(vector, 1)));
@@ -94,38 +93,40 @@ void string_test()
 
 void object_test()
 {
-    BridgeVector *vector = bvector_create(B_Object);
+    char tostr[512] = { 0 };
+    const void *data = NULL;
+
+    BridgeVector *vector = bvector_create();
 
     if (!vector) {
         return;
     }
 
-    int i, size = sizeof(Student);
-    Student student;
+    bvector_udf_free(vector, student_free);
+    bvector_udf_tostr(vector, student_tostr);
+    bvector_udf_compare(vector, student_compare);
 
-    for (i = 0; i < 10; ++i) {
-        student.no = i + 1;
-        student.age = 18 + i * 2;
-        snprintf(student.name, 20, "name%d", i);
-        bvector_append(vector, bnode_object2(&student, size));
+    char name[20];
+    for (int i = 0; i < 10; ++i) {
+        snprintf(name, 20, "name%d", i);
+        bvector_append(vector, bnode_object(student_create(i + 1, 18 + i * 2, name)));
     }
 
-    bvector_print_callback(vector, student_print);
+    bvector_print(vector);
     printf("\n");
 
-    student.no = 100;
-    student.age = 512;
-    snprintf(student.name, 20, "name%d", 100);
-    bvector_set_object(vector, 1, &student, size);
-    bvector_set_object(vector, 3, &student, size);
-    bvector_set_object(vector, 4, &student, size);
+    bvector_set_object(vector, 1, bnode_object(student_create(100, 90, "name101")));
+    bvector_set_object(vector, 3, bnode_object(student_create(101, 94, "name102")));
+    bvector_set_object(vector, 4, bnode_object(student_create(102, 98, "name103")));
 
-    bvector_print_callback(vector, student_print);
+    bvector_print(vector);
     printf("\n");
 
-    student_print(bnode_to_object(bvector_fetch(vector, 1)));
-    student_print(bnode_to_object(bvector_fetch(vector, 4)));
-    printf("\n");
+    student_tostr(bnode_to_object(bvector_fetch(vector, 1)), tostr, 512);
+    printf("fetch index[%d] value: %s from vector.\n", 1, tostr);
+
+    student_tostr(bnode_to_object(bvector_fetch(vector, 4)), tostr, 512);
+    printf("fetch index[%d] value: %s from vector.\n", 4, tostr);
 
     bvector_destroy(vector);
 }

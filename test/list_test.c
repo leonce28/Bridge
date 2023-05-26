@@ -6,7 +6,7 @@
 
 void integer_test()
 {
-    BridgeList *list = blist_create(B_Integer);
+    BridgeList *list = blist_create();
 
     if (!list) {
         return;
@@ -19,7 +19,7 @@ void integer_test()
     blist_push_back(list, bnode_integer(5));
     blist_push_front(list, bnode_integer(6));
 
-    blist_print_normal(list);
+    blist_print(list);
     printf("\n");
 
     blist_pop_front(list);
@@ -28,7 +28,7 @@ void integer_test()
     blist_pop_back(list);
     blist_pop_front(list);
 
-    blist_print_normal(list);
+    blist_print(list);
     printf("\n");
 
     blist_destroy(list);
@@ -36,7 +36,7 @@ void integer_test()
 
 void decimal_test()
 {
-    BridgeList *list = blist_create(B_Decimal);
+    BridgeList *list = blist_create();
 
     if (!list) {
         return;
@@ -49,7 +49,7 @@ void decimal_test()
     blist_push_back(list, bnode_decimal(5.5));
     blist_push_front(list, bnode_decimal(6.6));
 
-    blist_print_normal(list);
+    blist_print(list);
     printf("\n");
 
     blist_pop_front(list);
@@ -58,7 +58,7 @@ void decimal_test()
     blist_pop_back(list);
     blist_pop_front(list);
 
-    blist_print_normal(list);
+    blist_print(list);
     printf("\n");
 
     blist_destroy(list);
@@ -66,7 +66,7 @@ void decimal_test()
 
 void string_test()
 {
-    BridgeList *list = blist_create(B_String);
+    BridgeList *list = blist_create();
 
     if (!list) {
         return;
@@ -79,7 +79,7 @@ void string_test()
     blist_push_back(list, bnode_string("string5"));
     blist_push_front(list, bnode_string("string6"));
 
-    blist_print_normal(list);
+    blist_print(list);
     printf("\n");
 
     blist_pop_front(list);
@@ -88,7 +88,7 @@ void string_test()
     blist_pop_back(list);
     blist_pop_front(list);
 
-    blist_print_normal(list);
+    blist_print(list);
     printf("\n");
 
     blist_destroy(list);
@@ -96,12 +96,16 @@ void string_test()
 
 void object_test()
 {
-    BridgeList *list = blist_create(B_Object);
+    BridgeList *list = blist_create();
 
     if (!list) {
         return;
     }
-    
+
+    blist_udf_free(list, student_free);
+    blist_udf_tostr(list, student_tostr);
+    blist_udf_compare(list, student_compare);
+
     blist_push_back(list, bnode_object(student_create(1, 18, "zhangsan")));
     blist_push_back(list, bnode_object(student_create(2, 27, "lisi")));
     blist_push_front(list, bnode_object(student_create(3, 36, "wangwu")));
@@ -109,7 +113,7 @@ void object_test()
     blist_push_back(list, bnode_object(student_create(5, 54, "qiqi")));
     blist_push_front(list, bnode_object(student_create(6, 63, "laoba")));
 
-    blist_print_callback(list, student_print);
+    blist_print(list);
     printf("\n");
 
     blist_pop_front(list);
@@ -118,7 +122,7 @@ void object_test()
     blist_pop_back(list);
     blist_pop_front(list);
 
-    blist_print_callback(list, student_print);
+    blist_print(list);
     printf("\n");
 
     blist_destroy(list);
