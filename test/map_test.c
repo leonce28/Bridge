@@ -2,63 +2,52 @@
 #include "map.h"
 #include "test.h"
 
-void string_integer_test()
+int main() 
 {
     size_t i;
     BridgePair *pair = NULL;
-    BridgeMap *map = bmap_create(B_String, B_Integer);
+    BridgeMap *map = bmap_create();
     if (!map) {
-        return;
+        return 0;
     }
 
-    const char *keys[] = { "apple", "banana", "cherry", "durian", "elderberry" };
-    int values[] = { 1, 2, 3, 4, 5 };
+    bmap_udf_free(map, student_free);
+    bmap_udf_hash(map, student_hash);
+    bmap_udf_tostr(map, student_tostr);
+    bmap_udf_compare(map, student_compare);
 
-    for (i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
-        pair = bpair_make(bnode_string(keys[i]), bnode_integer(values[i]));
-        bmap_put_pair(map, pair);
-    }
+    pair = bpair_make(bnode_string("apple"), bnode_integer(11));
+    bmap_put_pair(map, pair);
 
-    bmap_print_normal(map);
+    pair = bpair_make(bnode_string("banana"), bnode_integer(22));
+    bmap_put_pair(map, pair);
+
+    pair = bpair_make(bnode_string("cherry"), bnode_integer(33));
+    bmap_put_pair(map, pair);
+
+    pair = bpair_make(bnode_string("durian"), bnode_integer(44));
+    bmap_put_pair(map, pair);
+
+    pair = bpair_make(bnode_string("elderberry"), bnode_integer(55));
+    bmap_put_pair(map, pair);
+
+    bmap_print(map);
     printf("\n");
 
-    pair = bmap_find_pair(map, bnode_string("banana"));
-    printf("%s : %lld\n", bnode_to_string(bpair_first(pair)), bnode_to_integer(bpair_second(pair)));
+    if ((pair = bmap_find_pair(map, bnode_string("cherry"))) != nullptr) {
+        printf("find: %s : %lld\n", 
+            bnode_to_string(bpair_first(pair)), bnode_to_integer(bpair_second(pair)));
+        
+        bnode_set_integer(bpair_second(pair), 996);
+    }
 
     bmap_erase_pair(map, bnode_string("banana"));
     bmap_erase_pair(map, bnode_string("durian"));
 
-    bmap_print_normal(map);
+    bmap_print(map);
     printf("\n");
 
-    bvector_destroy(map);
-}
-
-void decimal_test()
-{
-
-}
-
-void string_test()
-{
-   
-}
-
-void object_test()
-{
- 
-}
-
-int main() 
-{
-    printf("---------------------------\n");
-    string_integer_test();
-    printf("---------------------------\n");
-    decimal_test();
-    printf("---------------------------\n");
-    string_test();
-    printf("---------------------------\n");
-    object_test();
-    printf("---------------------------\n");
+    bmap_destroy(map);
+    
     return 0;
 }

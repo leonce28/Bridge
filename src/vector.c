@@ -77,7 +77,7 @@ void bvector_set_integer(BridgeVector *vector, int index, long long ival)
 
     BridgeNode *node = bvector_fetch(vector, index);
 
-    assert(node && bnode_type(node) == B_Integer);
+    assert(node && bnode_is_integer(node));
 
     bnode_set_integer(node, ival);
 }
@@ -88,7 +88,7 @@ void bvector_set_decimal(BridgeVector *vector, int index, long double dval)
 
     BridgeNode *node = bvector_fetch(vector, index);
 
-    assert(node && bnode_type(node) == B_Decimal);
+    assert(node && bnode_is_decimal(node));
 
     bnode_set_decimal(node, dval);
 }
@@ -100,7 +100,7 @@ void bvector_set_string(BridgeVector *vector, int index, const char *sval)
 
     BridgeNode *node = bvector_fetch(vector, index);
 
-    assert(node && bnode_type(node) == B_String);
+    assert(node && bnode_is_string(node));
 
     bnode_set_string(node, sval);
 }
@@ -111,7 +111,7 @@ void bvector_set_object(BridgeVector *vector, int index, void *oval)
     assert(vector && oval);
 
     BridgeNode *node = bvector_fetch(vector, index);
-    assert(node && bnode_type(node) == B_Object);
+    assert(node && bnode_is_object(node));
 
     void *del = bnode_set_object(node, oval);
     assert(del);

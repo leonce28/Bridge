@@ -19,12 +19,52 @@ typedef struct MapListRoot {
 
 struct BridgeMap {
     int size;
+    int tb_size;
     int capacity;
-    int key_type;
-    int val_type;
-    int block_size;
     void *tables;
+
+    BridgeFuncFree free;
+    BridgeFuncHash hash;
+    BridgeFuncTostr tostr;
+    BridgeFuncCompare compare;
 };
+
+struct BridgePair {
+    BridgeNode *first;
+    BridgeNode *second;
+};
+
+BridgePair *bpair_make(BridgeNode *first, BridgeNode *second)
+{
+    assert(first && second);
+
+    BridgePair *pair = malloc(sizeof(BridgePair));
+
+    assert(pair);
+
+    pair->first = first;
+    pair->second = second;
+
+    return pair;
+}
+
+void bpair_destroy(BridgePair *pair)
+{
+    assert(pair);
+
+    free(pair->first);
+    free(pair->second);
+}
+
+BridgeNode *bpair_first(BridgePair *pair)
+{
+    return pair->first;
+}
+
+BridgeNode *bpair_second(BridgePair *pair)
+{
+    return pair->second;
+}
 
 MapListNode *bmap_node_create(BridgePair *pair)
 {
@@ -38,79 +78,6 @@ MapListNode *bmap_node_create(BridgePair *pair)
     return node;
 }
 
-unsigned int bmap_hash_integer(long long integer)
-{
-    return integer;
-}
-
-unsigned int bmap_hash_decimal(long double decimal)
-{
-    return (unsigned int)(decimal * 31);
-}
-
-unsigned int bmap_hash_string(const char *string)
-{
-    unsigned char c;
-    unsigned int i, len;
-    unsigned int hash = 5381;
-
-    while (*string) {
-
-        c = (unsigned char)*string;
-        if ((c & 0x80) == 0) {
-            len = 1;
-        } else if ((c & 0xE0) == 0xC0) {
-            len = 2;
-        } else if ((c & 0xF0) == 0xE0) {
-            len = 3;
-        } else if ((c & 0xF8) == 0xF0) {
-            len = 4;
-        } else {
-            len = 0;
-        }
-
-        for (i = 0; i < len; i++) {
-            hash = ((hash << 5) + hash) + (unsigned int)*string;
-            string++;
-        }
-    }
-
-    return hash;
-}
-
-unsigned int bmap_hash_object(const void *object)
-{
-    // undo
-    return sizeof(object);
-}
-
-unsigned int bmap_hash_node(const BridgeNode *node)
-{
-    assert(node);
-
-    unsigned int value = 0;
-    switch (bnode_type(node)) {
-        case B_Integer:
-            value = bmap_hash_integer(bnode_to_integer(node));
-            break;
-        case B_Decimal:
-            value = bmap_hash_decimal(bnode_to_decimal(node));
-            break;
-        case B_String:
-            value = bmap_hash_string(bnode_to_string(node));
-            break;
-        case B_Object:
-            value = bmap_hash_object(bnode_to_object(node));
-            break;
-        case B_Invalid:
-        case B_Maximum:
-        default:
-            break;
-    }
-
-    return value;
-}
-
 void bmap_rehash(BridgeMap *map)
 {
     assert(map);
@@ -119,24 +86,20 @@ void bmap_rehash(BridgeMap *map)
 }
 
 
-BridgeMap *bmap_create(BridgeNodeType key_type, BridgeNodeType val_type)
+BridgeMap *bmap_create()
 {
-    assert(key_type > B_Invalid && key_type < B_Maximum);
-    assert(val_type > B_Invalid && val_type < B_Maximum);
-
     BridgeMap *map = malloc(sizeof(BridgeMap));
 
     assert(map);
 
     map->size = 0;
-    map->key_type = key_type;
-    map->val_type = val_type;
-    map->block_size = sizeof(MapListNode);
+    map->tb_size = sizeof(MapListNode);
     map->capacity = BRIDGE_MAP_CAPACITY;
-    map->tables = malloc(map->capacity * map->block_size);
+    map->tables = malloc(map->capacity * map->tb_size);
 
     assert(map->tables);
-    memset(map->tables, 0, map->capacity * map->block_size);
+
+    memset(map->tables, 0, map->capacity * map->tb_size);
 
     return map;
 }
@@ -146,7 +109,7 @@ void bmap_destroy(BridgeMap *map)
     MapListNode *kv = NULL;
     MapListNode *next = NULL;
     for (int i = 0; i < map->capacity; i++) {
-        kv = (MapListNode *)(map->tables + (i * map->block_size));
+        kv = (MapListNode *)(map->tables + (i * map->tb_size));
         if (!kv) {
             continue;
         }
@@ -164,6 +127,21 @@ void bmap_destroy(BridgeMap *map)
     free(map);
 }
 
+unsigned int bmap_hash_node(const BridgeNode *node, const BridgeMap *map)
+{
+    assert(node && map);
+
+    unsigned int index = 0;
+    
+    if (map->hash) {
+        index = map->hash(bnode_to_void(node));
+    } else {
+        index = bnode_hash(node);
+    }
+
+    return index % map->capacity;
+}
+
 void bmap_put_pair(BridgeMap *map, BridgePair *pair)
 {
     assert(map && pair);
@@ -176,12 +154,8 @@ void bmap_put_pair(BridgeMap *map, BridgePair *pair)
     const BridgeNode *first = bpair_first(pair);
     const BridgeNode *second = bpair_second(pair);
 
-    if (map->key_type != bnode_type(first) || map->val_type != bnode_type(second)) {
-        return;
-    }
-
-    index = bmap_hash_node(first) % map->capacity;
-    root = (MapListRoot *)(map->tables + (index * map->block_size));
+    index = bmap_hash_node(first, map);
+    root = (MapListRoot *)(map->tables + (index * map->tb_size));
     assert(root);
 
     if (root->count == 0) {
@@ -191,8 +165,7 @@ void bmap_put_pair(BridgeMap *map, BridgePair *pair)
 
     node = root->root;
     while (node) {
-        if (bnode_is_equal(bpair_first(node->pair), bpair_first(pair))) {
-            // bnode_transfer(bpair_second(node->pair), bpair_second(pair));
+        if (bnode_equal(bpair_first(node->pair), bpair_first(pair))) {
             goto success;
         }
 
@@ -207,7 +180,7 @@ void bmap_put_pair(BridgeMap *map, BridgePair *pair)
 
 success:
     root->count++;
-    bmap_rehash(map);
+    // bmap_rehash(map);
 }
 
 BridgePair *bmap_find_pair(const BridgeMap *map, const BridgeNode *first) 
@@ -218,8 +191,8 @@ BridgePair *bmap_find_pair(const BridgeMap *map, const BridgeNode *first)
     MapListRoot *root = NULL;
     MapListNode *node = NULL;
 
-    index = bmap_hash_node(first) % map->capacity;
-    root = (MapListRoot *)(map->tables + (index * map->block_size));
+    index = bmap_hash_node(first, map);
+    root = (MapListRoot *)(map->tables + (index * map->tb_size));
     assert(root);
 
     if (root->count == 0) {
@@ -227,7 +200,7 @@ BridgePair *bmap_find_pair(const BridgeMap *map, const BridgeNode *first)
     }
 
     for (node = root->root; 
-         node && bnode_not_equal(bpair_first(node->pair), first); 
+         node && !bnode_equal(bpair_first(node->pair), first); 
          node = node->next) { }
 
     if (node && node->pair) {
@@ -245,8 +218,8 @@ void bmap_erase_pair(BridgeMap *map, const BridgeNode *first)
     MapListRoot *root = NULL;
     MapListNode *node = NULL, *prev = NULL;
 
-    index = bmap_hash_node(first) % map->capacity;
-    root = (MapListRoot *)(map->tables + (index * map->block_size));
+    index = bmap_hash_node(first, map);
+    root = (MapListRoot *)(map->tables + (index * map->tb_size));
     assert(root);
 
     if (root->count == 0) {
@@ -256,7 +229,7 @@ void bmap_erase_pair(BridgeMap *map, const BridgeNode *first)
     node = root->root;
     assert(node && node->pair);
 
-    while (node && bnode_not_equal(bpair_first(node->pair), first)) {
+    while (node && !bnode_equal(bpair_first(node->pair), first)) {
         prev = node;
         node = node->next;
     }
@@ -273,28 +246,70 @@ void bmap_erase_pair(BridgeMap *map, const BridgeNode *first)
     free(node);
 }
 
-void bmap_print_normal(const BridgeMap *map)
+void bmap_udf_free(BridgeMap *map, BridgeFuncFree free)
 {
+    assert(map && free);
 
+    map->free = free;
 }
 
-void bmap_print_callback(const BridgeMap *map, BridgeMapPrint print)
+void bmap_udf_hash(BridgeMap *map, BridgeFuncHash hash)
 {
-    assert(map && print);
+    assert(map && hash);
+
+    map->hash = hash;
+}
+
+void bmap_udf_tostr(BridgeMap *map, BridgeFuncTostr tostr)
+{
+    assert(map && tostr);
+
+    map->tostr = tostr;
+}
+
+void bmap_udf_compare(BridgeMap *map, BridgeFuncCompare compare)
+{
+    assert(map && compare);
+
+    map->compare = compare;
+}
+
+void bmap_print(const BridgeMap *map)
+{
+    bmap_print_len(map, 512);
+}
+
+void bmap_print_len(const BridgeMap *map, int len)
+{
+    assert(map);
     
     int index = 0;
     MapListRoot *root = NULL;
     MapListNode *node = NULL;
+
+    char *dst = (char *)malloc(len + 1);
+    dst[0] = '\0';
+
     for (; index < map->capacity; ++index) {
-        root = (MapListRoot *)(map->tables + (index * map->block_size));
+        root = (MapListRoot *)(map->tables + (index * map->tb_size));
         if (root && root->count == 0) {
             continue;
         }
 
         node = root->root;
         while (node) {
-            print(bnode_to_object(bpair_first(node->pair)), 
-                  bnode_to_object(bpair_second(node->pair)));
+            if (map->tostr) {
+                map->tostr(bnode_to_void(node->pair->first), dst, len);
+                printf("%s ", dst);
+                map->tostr(bnode_to_void(node->pair->second), dst, len);
+                printf("%s ", dst);
+            } else {
+                bnode_tostr(node->pair->first, dst, len);
+                printf("%s ", dst);
+                bnode_tostr(node->pair->second, dst, len);
+                printf("%s ", dst);
+            }
+
             node = node->next;
         }
     }

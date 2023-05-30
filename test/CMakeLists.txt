@@ -28,18 +28,6 @@ TARGET_LINK_LIBRARIES(
     pthread
 )
 
-# bridge pair
-ADD_EXECUTABLE(
-    bridge_test_pair
-    pair_test.c
-)
-
-TARGET_LINK_LIBRARIES(
-    bridge_test_pair
-    bridge
-    pthread
-)
-
 # bridge map
 ADD_EXECUTABLE(
     bridge_test_map

@@ -49,6 +49,18 @@ int student_free(void *data)
     return 0;
 }
 
+int student_hash(const void *data)
+{
+    if (!data) {
+        return -1;
+    }
+
+    Student *stu = (Student *)data;
+
+    return stu->age + stu->no + stu->name[0];
+}
+
+
 int student_compare(const void *data1, const void *data2)
 {
     // undo

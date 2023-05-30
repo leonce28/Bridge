@@ -4,6 +4,15 @@
 #include <assert.h>
 #include "node.h"
 
+typedef enum BridgeNodeType {
+    B_Invalid,
+    B_Integer,
+    B_Decimal,
+    B_String,
+    B_Object,
+    B_Maximum,
+} BridgeNodeType;
+
 struct BridgeNode {
     int type;
     int extra;
@@ -103,6 +112,13 @@ const void *bnode_to_object(const BridgeNode *node)
      return node->val.oval;
 }
 
+const void *bnode_to_void(const BridgeNode *node)
+{
+     assert(node);
+
+     return node->val.oval;
+}
+
 void bnode_set_integer(BridgeNode *node, long long ival)
 {
     assert(node && node->type == B_Integer);
@@ -149,11 +165,67 @@ int bnode_size()
     return sizeof(BridgeNode);
 }
 
+unsigned int bnode_hash_string(const char *string)
+{
+    unsigned char c;
+    unsigned int i, len;
+    unsigned int hash = 5381;
+
+    while (*string) {
+
+        c = (unsigned char)*string;
+        if ((c & 0x80) == 0) {
+            len = 1;
+        } else if ((c & 0xE0) == 0xC0) {
+            len = 2;
+        } else if ((c & 0xF0) == 0xE0) {
+            len = 3;
+        } else if ((c & 0xF8) == 0xF0) {
+            len = 4;
+        } else {
+            len = 0;
+        }
+
+        for (i = 0; i < len; i++) {
+            hash = ((hash << 5) + hash) + (unsigned int)*string;
+            string++;
+        }
+    }
+
+    return hash;
+}
+
+unsigned int bnode_hash(const BridgeNode *node)
+{
+    assert(node);
+
+    unsigned int hash = 0;
+
+    switch (node->type) {
+        case B_Integer:
+            hash = node->val.ival;
+            break;
+        case B_Decimal:
+            hash = (unsigned int)(node->val.dval * 31);
+            break;
+        case B_String:
+            hash = bnode_hash_string(node->val.sval);
+            break;
+        case B_Object:
+            hash = sizeof(node->val.oval);
+            break;
+        default:
+            break;
+    }
+
+    return hash;
+}
+
 void bnode_tostr(const BridgeNode *node, char *dst, int max)
 {
     assert(node && dst && max > 0);
 
-    switch (bnode_type(node)) {
+    switch (node->type) {
         case B_Integer:
             snprintf(dst, max, "%lld", bnode_to_integer(node));
             break;
@@ -176,12 +248,28 @@ BridgeNodeType bnode_type(const BridgeNode *node)
     return node->type;
 }
 
-bool bnode_is_equal(const BridgeNode *node1, const BridgeNode *node2)
+bool bnode_equal(const BridgeNode *node1, const BridgeNode *node2)
 {
     return node1->type == node2->type;
 }
 
-bool bnode_not_equal(const BridgeNode *node1, const BridgeNode *node2)
+bool bnode_is_integer(BridgeNode *node)
 {
-    return bnode_is_equal(node1, node2);
+    return node->type == B_Integer;
+}
+
+bool bnode_is_decimal(BridgeNode *node)
+{
+    return node->type == B_Decimal;
+
+}
+
+bool bnode_is_string(BridgeNode *node)
+{
+    return node->type == B_String;
+}
+
+bool bnode_is_object(BridgeNode *node)
+{
+    return node->type == B_Object;
 }

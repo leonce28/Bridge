@@ -54,7 +54,8 @@
         "string": "c",
         "cstdio": "c",
         "semaphore": "c",
-        "func.h": "c"
+        "func.h": "c",
+        "__threading_support": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
